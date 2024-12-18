@@ -7,6 +7,7 @@ from sys import version_info
 isPython3 = version_info >= (3,)
 assert isPython3 #If this fails switch to python 3
 import struct, tempfile
+import logging
 
 MSC_MAGIC = b'\xB2\xAC\xBC\xBA\xE6\x90\x32\x01\xFD\x02\x00\x00\x00\x00\x00\x00'
 
@@ -287,7 +288,7 @@ def disassembleCommands(rawCommands, startOffset):
     return commands
 
 #Thanks Triptych https://stackoverflow.com/questions/1265665/python-check-if-a-string-represents-an-int-without-using-try-except
-def RepresentsInt(s):
+def _RepresentsInt(s):
     try:
         int(s, 0)
         return True
@@ -445,6 +446,7 @@ class MscScript:
         self.cmds = disassembleCommands(f.read(end - start), start - 0x30)
 
     def getInstructionText(self, index):
+        cmds = []
         if index < 0 or index >= len(self.cmds):
             return ""
         else:
@@ -453,11 +455,14 @@ class MscScript:
     def getIndexOfInstruction(self, location):
         for i in range(len(self.cmds)):
             cmd = self.cmds[i]
+            # print("cmd.commandPosition: "+str(cmd.commandPosition))
             if cmd.commandPosition == location:
+                # print("return i: "+str(i))
                 return i
         return None
 
     def getInstructionOfIndex(self, index):
+        cmd = self.cmds[index]
         return cmd[index].commandPosition
 
     def getCommand(self, location):
@@ -551,9 +556,8 @@ class MscFile:
         sortedScriptOffsets.sort()
         count = 0
         for i in sortedScriptOffsets:
-            #Print out func count and the offsets
-            print(count)
-            print(i)
+            #Print out func count and the pointer
+            logging.info("[func_name: func_%i, pointer: %i]" % (count, i))
             count = count + 1
 
         if f.tell() % 0x10 != 0:
